@@ -1,9 +1,9 @@
-// Created by Viacheslav (Slava) Skryabin 04/01/2018
 package support;
 
-import org.openqa.selenium.JavascriptExecutor;
+import io.swagger.models.Swagger;
+import io.swagger.parser.SwaggerParser;
+import org.json.JSONObject;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
@@ -20,19 +20,50 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TestContext {
 
     private static WebDriver driver;
+    private static HashMap<String, Object> testData = new HashMap<>();
+    private static String pathToSwagger = "https://skryabin.com/recruit/api/v1/swagger.json";
 
     public static WebDriverWait getWait() {
         return new WebDriverWait(getDriver(), 5);
     }
 
-    private static HashMap<String, String> getData(String fileName) throws Exception {
+    public static String getStringTestData(String key) {
+        return (String)testData.get(key);
+    }
+
+    public static JSONObject getJsonTestData(String key) {
+        return (JSONObject)testData.get(key);
+    }
+
+    public static void setTestData(String key, Object value) {
+        testData.put(key, value);
+    }
+
+    public static File getSwaggerFile() {
+        return new File(pathToSwagger);
+    }
+
+    public static String getSwaggerType(String entity, String key) throws FileNotFoundException {
+        Swagger swagger = new SwaggerParser().read(pathToSwagger);
+        return swagger.getDefinitions().get(entity).getProperties().get(key).getType();
+    }
+
+    public static File getResumeFile() throws Exception {
+        String path = System.getProperty("user.dir") + "/src/test/resources/config/resume.jpg";
+        return new File(path);
+    }
+
+    public static HashMap<String, String> getData(String fileName) throws Exception {
         String path = System.getProperty("user.dir") + "/src/test/resources/config/" + fileName +".yml";
         File sender = new File(path);
         InputStream stream = new FileInputStream(sender);
@@ -50,6 +81,39 @@ public class TestContext {
 
     public static HashMap<String, String> getReceiver() throws Exception {
         return getData("receiver");
+    }
+
+    public static HashMap<String, String> getRecruiter() throws Exception {
+        return getData("recruiter");
+    }
+
+    public static HashMap<String, String> getPosition() throws Exception {
+        return getData("position");
+    }
+
+    public static HashMap<String, String> getCandidate() throws Exception {
+        return getData("candidate");
+    }
+
+    public static HashMap<String, String> getPositionWithTimestamp() throws Exception {
+        HashMap<String, String> position = getPosition();
+        String title = position.get("title");
+        title = addTimeStamp(title);
+        position.put("title", title);
+        return position;
+    }
+
+    public static HashMap<String, String> getCandidateWithTimestamp() throws Exception {
+        HashMap<String, String> candidate = getCandidate();
+        String lastName = candidate.get("lastName");
+        lastName = addTimeStamp(lastName);
+        candidate.put("lastName", lastName);
+        return candidate;
+    }
+
+    public static String addTimeStamp(String value) {
+        String timestamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+        return value + " " + timestamp;
     }
 
     public static void initialize() {
